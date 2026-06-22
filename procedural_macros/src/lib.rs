@@ -75,6 +75,7 @@ pub fn no_effect(_: TokenStream, item: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn plugin(input: TokenStream, item: TokenStream) -> TokenStream {
+    panic!("{item:?}");
     //return item;
 
     #[derive(Clone, Copy)]
