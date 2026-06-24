@@ -1,5 +1,7 @@
 #![feature(trim_prefix_suffix)]
-use proc_macro::{Delimiter, Group, Literal, Span, TokenStream, TokenTree};
+use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
+
+mod scenes;
 
 #[proc_macro]
 pub fn prelude(input: TokenStream) -> TokenStream {
@@ -268,4 +270,9 @@ fn process_impl_group(group: Group) -> Group {
     let mut group = Group::new(delimiter, token_stream);
     group.set_span(span);
     group
+}
+
+#[proc_macro]
+pub fn scene(input: TokenStream) -> TokenStream {
+    scenes::State::scene(input)
 }

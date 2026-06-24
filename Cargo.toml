@@ -8,10 +8,11 @@ members = ["procedural_macros"]
 
 [dependencies]
 procedural_macros = { path = "procedural_macros" }
-bevy = { version = "0.19.0", default-features = false }
+bevy = { version = "0.19.0", default-features = false, features = [
+    "bevy_scene",
+] }
 duck_back = { version = "1.4.0", optional = true }
 
 [features]
 error_handling = ["dep:duck_back"]
-# Bevy features:
-default = []
+default = ["error_handling"]
