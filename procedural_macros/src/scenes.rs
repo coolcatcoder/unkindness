@@ -178,6 +178,10 @@ impl State {
             }
         }
 
+        if let SearchFor::GroupOrComma(ident) = search_for {
+            elements.push(Element::Bare(ident));
+        }
+
         elements
     }
 
@@ -283,19 +287,25 @@ fn expand_entities(output: &mut TokenStream, entities: Vec<Entity>) {
     let mut entities_token_stream = TokenStream::new();
 
     for entity in entities {
-        let mut inner = ();
+        let mut inner = TokenStream::new();
 
-        let scene_function_arguments = [
-            TokenTree::Ident(Ident::new("move", Span::call_site())),
-            TokenTree::Punct(Punct::new('|', Spacing::Alone)),
-            TokenTree::Ident(Ident::new("_context", Span::call_site())),
-            TokenTree::Punct(Punct::new(',', Spacing::Alone)),
-            TokenTree::Ident(Ident::new("_scene", Span::call_site())),
-            TokenTree::Punct(Punct::new('|', Spacing::Alone)),
-            TokenTree::Group(Group::new(Delimiter::Brace, TokenStream::new())),
-        ]
-        .into_iter()
-        .collect();
+        for element in entity.elements {
+            match element {
+                Element::Bare(ident) => {
+                    inner.extend(quote(stringify! {
+                        let _ = _scene.get_or_insert_template:: <<COMPONENT as ::bevy::ecs::template::FromTemplate> ::Template>(_context);
+                    }, &[("COMPONENT", TokenTree::Ident(ident).into())]));
+                }
+                _ => todo!(),
+            }
+        }
+
+        let scene_function_arguments = quote(
+            stringify! {
+                move |_context, _scene| {INNER}
+            },
+            &[("INNER", inner)],
+        );
 
         let mut scene_function = TokenStream::new();
         call_function(
@@ -317,4 +327,46 @@ fn expand_entities(output: &mut TokenStream, entities: Vec<Entity>) {
         ["bevy", "scene", "SceneListScope"],
         TokenTree::Group(Group::new(Delimiter::Parenthesis, entities_token_stream)).into(),
     );
+}
+
+trait QuoteInput {
+    fn to_token_stream(self) -> TokenStream;
+}
+
+impl QuoteInput for &str {
+    fn to_token_stream(self) -> TokenStream {
+        self.parse().unwrap()
+    }
+}
+impl QuoteInput for TokenStream {
+    fn to_token_stream(self) -> TokenStream {
+        self
+    }
+}
+
+fn quote(input: impl QuoteInput, replacements: &[(&'static str, TokenStream)]) -> TokenStream {
+    let input = input.to_token_stream();
+    let mut output = TokenStream::new();
+
+    for token_tree in input {
+        match token_tree {
+            TokenTree::Group(group) => {
+                let token_stream = quote(group.stream(), replacements);
+                let mut new_group = Group::new(group.delimiter(), token_stream);
+                new_group.set_span(group.span());
+                output.extend([new_group]);
+            }
+            TokenTree::Ident(ident)
+                if let ident = ident.to_string()
+                    && let Some((_, replacement)) = replacements
+                        .iter()
+                        .find(|(search_for, _)| ident == *search_for) =>
+            {
+                output.extend(replacement.clone());
+            }
+            token_tree => output.extend([token_tree]),
+        }
+    }
+
+    output
 }

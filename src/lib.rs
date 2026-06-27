@@ -8,6 +8,9 @@ pub use procedural_macros::prelude;
 //#[procedural_macros::plugin]
 mod tester;
 
+#[cfg(test)]
+mod tests;
+
 #[macro_export]
 macro_rules! prelude_old {
     () => {

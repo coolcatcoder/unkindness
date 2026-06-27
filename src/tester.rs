@@ -87,14 +87,28 @@ fn expanded_with_name() -> impl SceneList {
 struct TupleTester(u32, ());
 
 fn tester() -> impl SceneList {
-    scene!(
-        a(TupleTester(0, (), some_function_call::<(), ()>)),
-        bad(),
-        (),
-        long_name_right_here(a, b, c, d, bad,),
-        (what_point, do_we),
-    )
+    scene!((Transform))
 }
+
+// fn tester() -> impl SceneList {
+//     scene!(
+//         a(TupleTester(0, (), some_function_call::<(), ()>)),
+//         bad(),
+//         (),
+//         long_name_right_here(a, b, c, d, bad,),
+//         (what_point, do_we),
+//     )
+// }
+
+// fn other() -> impl SceneList {
+//     scene!((
+//         Node {
+//             width: px(100),
+//             height: px(50)
+//         },
+//         on(|press: On<Pointer<Press>>| { info!("button pressed!") })
+//     ))
+// }
 
 // struct Module;
 
