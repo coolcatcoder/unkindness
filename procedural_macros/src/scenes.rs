@@ -45,7 +45,7 @@ fn call_function<const LENGTH: usize>(
 
 enum Element {
     Bare(Ident),
-    TupleStruct(Vec<TokenStream>),
+    TupleStruct(Ident, Vec<TokenStream>),
 }
 
 struct Entity {
@@ -134,46 +134,45 @@ impl State {
         let mut search_for = SearchFor::Ident;
 
         for token_tree in input.into_iter() {
-            match (&mut search_for, token_tree) {
-                (SearchFor::Ident, TokenTree::Ident(ident)) => {
-                    search_for = SearchFor::GroupOrComma(ident);
-                }
+            search_for = match (search_for, token_tree) {
+                (SearchFor::Ident, TokenTree::Ident(ident)) => SearchFor::GroupOrComma(ident),
                 (SearchFor::Ident, token_tree) => {
                     self.error(token_tree.span(), "Expected an ident.");
+                    SearchFor::Ident
                 }
 
                 (SearchFor::GroupOrComma(ident), TokenTree::Group(group)) => {
                     let element = match group.delimiter() {
                         Delimiter::Parenthesis => {
-                            Element::TupleStruct(self.parse_tuple_struct_fields(group.stream()))
+                            Element::TupleStruct(
+                                ident,
+                                self.parse_tuple_struct_fields(group.stream()),
+                            )
                             // TODO: Currently assumes all parenthesis are structs, rather than functions.
                         }
                         _ => todo!(),
                     };
                     elements.push(element);
 
-                    search_for = SearchFor::Comma;
+                    SearchFor::Comma
                 }
                 (SearchFor::GroupOrComma(ident), TokenTree::Punct(punct))
                     if punct.as_char() == ',' =>
                 {
-                    let SearchFor::GroupOrComma(ident) =
-                        std::mem::replace(&mut search_for, SearchFor::Ident)
-                    else {
-                        unreachable!()
-                    };
-
-                    elements.push(Element::Bare(ident))
+                    elements.push(Element::Bare(ident));
+                    SearchFor::Ident
                 }
-                (SearchFor::GroupOrComma(_), token_tree) => {
+                (SearchFor::GroupOrComma(ident), token_tree) => {
                     self.error(token_tree.span(), "Expected a group or a comma.");
+                    SearchFor::GroupOrComma(ident)
                 }
 
                 (SearchFor::Comma, TokenTree::Punct(punct)) if punct.as_char() == ',' => {
-                    search_for = SearchFor::Ident;
+                    SearchFor::Ident
                 }
                 (SearchFor::Comma, token_tree) => {
                     self.error(token_tree.span(), "Expected a comma.");
+                    SearchFor::Comma
                 }
             }
         }
@@ -296,6 +295,7 @@ fn expand_entities(output: &mut TokenStream, entities: Vec<Entity>) {
                         let _ = _scene.get_or_insert_template:: <<COMPONENT as ::bevy::ecs::template::FromTemplate> ::Template>(_context);
                     }, &[("COMPONENT", TokenTree::Ident(ident).into())]));
                 }
+                Element::TupleStruct(ident, fields) => {}
                 _ => todo!(),
             }
         }
