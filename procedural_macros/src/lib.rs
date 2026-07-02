@@ -2,6 +2,7 @@
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 
 mod scenes;
+mod state;
 
 #[proc_macro]
 pub fn prelude(input: TokenStream) -> TokenStream {

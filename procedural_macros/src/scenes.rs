@@ -55,11 +55,15 @@ struct Entity {
 
 pub struct State {
     errors: Vec<(Span, &'static str)>,
+    saved_tokens: Vec<TokenTree>,
 }
 
 impl State {
     pub fn scene(input: TokenStream) -> TokenStream {
-        let mut state = Self { errors: vec![] };
+        let mut state = Self {
+            errors: vec![],
+            saved_tokens: vec![],
+        };
         let entities = state.parse_entity_list(input);
 
         let mut output = TokenStream::new();
@@ -369,4 +373,8 @@ fn quote(input: impl QuoteInput, replacements: &[(&'static str, TokenStream)]) -
     }
 
     output
+}
+
+fn tester(token_stream: TokenStream) {
+    token_stream.into_iter().peekable();
 }
