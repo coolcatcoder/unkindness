@@ -87,7 +87,7 @@ fn expanded_with_name() -> impl SceneList {
 struct TupleTester(u32, ());
 
 fn tester() -> impl SceneList {
-    scene!((Transform))
+    scene!((bevy::prelude::Transform))
 }
 
 // fn tester() -> impl SceneList {
@@ -147,12 +147,3 @@ fn tester() -> impl SceneList {
 // impl Behaviour for Module {
 //     fn once() {}
 // }
-
-trait SystemThing {
-    type State;
-    fn blah(state: Self::State);
-}
-
-#[system(Update)]
-#[after(other_system)]
-fn my_system(query: Query<&Transform>) {}
