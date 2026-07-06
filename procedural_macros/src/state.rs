@@ -1,106 +1,116 @@
-use proc_macro::{Punct, Spacing, Span, TokenStream, TokenTree, token_stream};
-use std::{collections::VecDeque, marker::PhantomData};
+use proc_macro::{Ident, Spacing, Span, TokenStream, TokenTree};
 
 #[derive(Default)]
 pub struct State {
     errors: Vec<(Span, &'static str)>,
-    saved_tokens: VecDeque<TokenTree>,
 }
 
 impl State {
-    pub fn parse(&mut self, token_stream: TokenStream) -> Parser<'_> {
-        self.saved_tokens.clear();
-        Parser(token_stream.into_iter(), self)
+    pub fn parse<T: Parse>(&mut self, token_stream: TokenStream) -> Option<T> {
+        let token_stream: Vec<TokenTree> = token_stream.into_iter().collect();
+        let parser = Parser {
+            state: self,
+            tokens: &token_stream,
+            index: &mut 0,
+        };
+
+        T::parse(parser)
     }
 }
 
-pub struct Parser<'a>(token_stream::IntoIter, &'a mut State);
+pub trait Parse: Sized {
+    #[expect(patterns_in_fns_without_body)]
+    fn parse(mut parser: Parser) -> Option<Self>;
+}
 
+pub struct Parser<'a> {
+    state: &'a mut State,
+    tokens: &'a [TokenTree],
+    index: &'a mut usize,
+}
 impl Parser<'_> {
-    fn blah<T: TokensTo>(&mut self, mut find: T, mut f: impl FnMut((T, TokenTree)) -> (T, Flow)) {
-        while let Some(token_tree) = self.1.saved_tokens.pop_front().or_else(|| self.0.next()) {
-            let flow;
-            (find, flow) = f((find, token_tree));
+    /// Need to keep track of which token we just released, so that we can keep trying to parse in a while loop?
+    /// Return a new parser with each call of next. Only works in while loops.
+    /// Fixes the issue of being 1 wrong, due to not knowing whether we had just given out a `TokenTree`.
+    pub fn alternative_next<T: Parse>(&mut self) -> Option<(TokenTree, Self)> {
+        todo!()
+    }
+
+    pub fn parse<T: Parse>(&mut self) -> Option<T> {
+        let mut index: usize = *self.index;
+        let parser = Parser {
+            state: self.state,
+            tokens: self.tokens,
+            index: &mut index,
+        };
+
+        let output = T::parse(parser);
+
+        if output.is_some() {
+            *self.index = index;
+        } else {
+            *self.index += 1;
         }
+
+        output
     }
 
-    fn peek(&mut self) -> bool {
-        true
-    }
-}
-
-impl<'a> Iterator for Parser<'a> {
-    type Item = TokenTree;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.1.saved_tokens.pop_front().or_else(|| self.0.next())
+    pub fn not_empty(&self) -> bool {
+        *self.index < self.tokens.len()
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.0.size_hint()
+    fn next_internal(&mut self) -> Option<TokenTree> {
+        let item = self.tokens.get(*self.index).cloned();
+        *self.index += 1;
+        item
     }
 }
 
-fn tester(input: TokenStream) {
-    let mut state = State::default();
-    let mut parser = state.parse(input);
-}
+struct Colon(Spacing);
+impl Parse for Colon {
+    fn parse(mut parser: Parser) -> Option<Self> {
+        let Some(TokenTree::Punct(colon)) = parser.next_internal() else {
+            return None;
+        };
 
-trait Parse {
-    fn parse(parser: &mut Parser) -> bool;
+        Some(Colon(colon.spacing()))
+    }
 }
-
-trait TokensFrom {
-    fn tokens_from<T: IntoIterator<Item = TokenTree>>(self, from: T);
-}
-
-trait TokensTo {
-    fn tokens_to<T: TokensFrom>(self, to: T);
-}
-
-struct Separated<T, Separator>(PhantomData<(T, Separator)>);
 
 struct DoubleColon;
-
-enum Flow {
-    Continue,
-    Error(&'static str, Span),
+impl Parse for DoubleColon {
+    fn parse(mut parser: Parser) -> Option<Self> {
+        if !matches!(parser.parse::<Colon>()?.0, Spacing::Joint) {
+            return None;
+        }
+        parser.parse::<Colon>().map(|_| DoubleColon)
+    }
 }
 
-impl Parse for DoubleColon {
-    fn parse(parser: &mut Parser) -> bool {
+// pub enum Variadic<A = !, B, C, D, E, F, G> {
+//     A(A),
+//     B(B),
+//     C(C),
+//     D(D),
+//     E(E),
+//     F(F),
+//     G(G),
+// }
+
+pub struct Path {
+    segments: Vec<Ident>,
+    has_leading_double_colon: bool,
+}
+impl Parse for Path {
+    fn parse(mut parser: Parser) -> Option<Self> {
         enum Find {
-            FirstColon,
-            SecondColon(Punct),
+            DoubleColon,
+            Ident,
         }
-        impl TokensTo for Find {
-            fn tokens_to<T: TokensFrom>(self, to: T) {
-                match self {
-                    Find::FirstColon => (),
-                    Find::SecondColon(punct) => to.tokens_from([TokenTree::Punct(punct)]),
-                }
-            }
+        while parser.not_empty() {
+            //parser.parse
         }
 
-        parser.blah(Find::FirstColon, |input| match input {
-            (Find::FirstColon, TokenTree::Punct(punct))
-                if punct.as_char() == ':' && matches!(punct.spacing(), Spacing::Joint) =>
-            {
-                (Find::SecondColon(punct), Flow::Continue)
-            }
-            (Find::FirstColon, token_tree) => {
-                todo!()
-            }
-
-            (Find::SecondColon(first_colon), TokenTree::Punct(punct))
-                if punct.as_char() == ':' && matches!(punct.spacing(), Spacing::Alone) =>
-            {
-                todo!()
-            }
-
-            (find, token_tree) => (find, Flow::Error("testing", token_tree.span())),
-        });
-
-        true
+        None
     }
 }

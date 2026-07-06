@@ -1,7 +1,10 @@
 #![feature(trim_prefix_suffix)]
+#![feature(never_type)]
+#![warn(clippy::pedantic)]
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 
 mod scenes;
+mod scenes_better;
 mod state;
 
 #[proc_macro]

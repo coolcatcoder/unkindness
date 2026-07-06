@@ -131,15 +131,14 @@ impl State {
         let mut elements = vec![];
 
         enum SearchFor {
-            Path(bool, Vec<Ident>),
+            Ident,
+            GroupOrComma(Ident),
             Comma,
         }
         let mut search_for = SearchFor::Ident;
 
         for token_tree in input.into_iter() {
             search_for = match (search_for, token_tree) {
-                find_path_other!(),
-                find_path!() => SearchFor::Comma,
                 (SearchFor::Ident, TokenTree::Ident(ident)) => SearchFor::GroupOrComma(ident),
                 (SearchFor::Ident, token_tree) => {
                     self.error(token_tree.span(), "Expected an ident.");
