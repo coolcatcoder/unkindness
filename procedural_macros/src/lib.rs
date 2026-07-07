@@ -3,6 +3,7 @@
 #![warn(clippy::pedantic)]
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 
+mod quote;
 mod scenes;
 mod scenes_better;
 mod state;
@@ -279,4 +280,9 @@ fn process_impl_group(group: Group) -> Group {
 #[proc_macro]
 pub fn scene(input: TokenStream) -> TokenStream {
     scenes::State::scene(input)
+}
+
+#[proc_macro]
+pub fn scene_new(input: TokenStream) -> TokenStream {
+    scenes_better::scene(input)
 }

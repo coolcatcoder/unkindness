@@ -6,7 +6,7 @@ use bevy::{
     scene::{ResolveContext, ResolvedScene},
 };
 
-use procedural_macros::scene;
+use procedural_macros::{scene, scene_new};
 
 #[derive(Component, Default, Clone)]
 struct Bad;
@@ -86,8 +86,12 @@ fn expanded_with_name() -> impl SceneList {
 
 struct TupleTester(u32, ());
 
-fn tester() -> impl SceneList {
-    scene!((bevy::prelude::Transform))
+// fn tester() -> impl SceneList {
+//     //scene!((bevy::prelude::Transform))
+// }
+
+fn other() {
+    scene_new!();
 }
 
 // fn tester() -> impl SceneList {
