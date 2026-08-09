@@ -1,4 +1,4 @@
-use proc_macro::TokenStream;
+use proc_macro::{TokenStream, TokenTree};
 
 use crate::state::{DoubleColon, Parse, Parser, Path, State};
 
@@ -18,23 +18,23 @@ impl Parse for Scene {
     fn parse(mut parser: Parser) -> Option<Self> {
         enum Find {
             Path,
-            DoubleColon,
+            Group,
             None,
         }
         let mut find = Find::Path;
 
         while let Some((tree, mut parser)) = parser.next() {
             find = match (find, tree) {
-                (Find::Path, _) if parser.parse::<Path>().is_some() => Find::DoubleColon,
+                (Find::Path, _) if parser.parse::<Path>().is_some() => Find::Group,
                 (Find::Path, _) => {
                     parser.error("Not path!");
                     Find::Path
                 }
 
-                (Find::DoubleColon, _) if parser.parse::<DoubleColon>().is_some() => Find::None,
-                (Find::DoubleColon, _) => {
-                    parser.error("Not double colon!");
-                    Find::DoubleColon
+                (Find::Group, TokenTree::Group(_)) => Find::None,
+                (Find::Group, _) => {
+                    parser.error("Not group!");
+                    Find::Group
                 }
 
                 (Find::None, _) => {

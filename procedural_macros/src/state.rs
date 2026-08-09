@@ -198,32 +198,23 @@ impl Parse for Path {
         while let Some((tree, mut parser)) = parser.next() {
             find = match (find, tree) {
                 (Find::Either, TokenTree::Ident(ident)) => {
-                    parser.error("Start Ident");
-
                     path.has_leading_double_colon = false;
                     path.segments.push(ident);
                     Find::DoubleColon
                 }
                 (Find::Either, _) if parser.parse::<DoubleColon>().is_some() => {
-                    parser.error("Start DoubleColon");
-
                     path.has_leading_double_colon = true;
                     Find::Ident
                 }
                 (Find::Either, _) => {
-                    parser.error("Start None");
                     return None;
                 }
 
                 (Find::Ident, TokenTree::Ident(ident)) => {
-                    parser.error("Ident");
-
                     path.segments.push(ident);
                     Find::DoubleColon
                 }
                 (Find::Ident, _) => {
-                    parser.error("Ident None");
-
                     parser.back::<TokenTree>();
                     parser.back::<DoubleColon>();
                     return if path.segments.is_empty() {
@@ -233,14 +224,8 @@ impl Parse for Path {
                     };
                 }
 
-                (Find::DoubleColon, _) if parser.parse::<DoubleColon>().is_some() => {
-                    parser.error("DoubleColon");
-
-                    Find::Ident
-                }
+                (Find::DoubleColon, _) if parser.parse::<DoubleColon>().is_some() => Find::Ident,
                 (Find::DoubleColon, _) => {
-                    parser.error("DoubleColon None");
-
                     parser.back::<DoubleColon>();
                     return Some(path);
                 }

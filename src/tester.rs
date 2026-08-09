@@ -91,7 +91,7 @@ struct TupleTester(u32, ());
 // }
 
 fn other() {
-    scene_new!();
+    //scene_new!(::a::a::a(a));
 }
 
 // fn tester() -> impl SceneList {
