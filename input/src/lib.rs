@@ -1,6 +1,4 @@
-#![feature(splat)]
 #![feature(integer_casts)]
-#![expect(incomplete_features)]
 use std::any::TypeId;
 
 use bevy::{
@@ -21,7 +19,6 @@ pub fn plugin(app: &mut App) {
         default_dead_zone: 0.5,
         dead_zones: default(),
     })
-    .add_systems(Startup, bindings)
     .add_systems(PreUpdate, input.in_set(InputSystems));
 }
 
@@ -169,8 +166,7 @@ impl<T: Action> ActionTemplate for T {
 
 #[allow(unexpected_cfgs)]
 impl Input {
-    #[cfg(not(rust_analyzer))]
-    pub fn bind<T: ActionTemplate>(&mut self, #[rustc_splat] binding: impl Binding<T::Template>) {
+    pub fn bind<T: ActionTemplate>(&mut self, binding: impl Binding<T::Template>) {
         binding.bind(|index, input_source| {
             self.bindings
                 .entry((TypeId::of::<T>(), index))
@@ -178,9 +174,10 @@ impl Input {
                 .push(input_source);
         });
     }
+}
 
-    #[cfg(rust_analyzer)]
-    pub extern "c" fn bind<T: ActionTemplate>(&mut self, mut args: ...);
+pub trait InputSourceArray<const LENGTH: usize> {
+    fn into(self) -> [InputSource; LENGTH];
 }
 
 pub trait Binding<T>: Sized {
@@ -192,30 +189,9 @@ impl<T, I: Into<InputSource>> Binding<T> for (u8, I) {
     }
 }
 
-fn bindings(mut input: ResMut<Input>) {
-    input.bind::<UiMove>(0, KeyCode::KeyA);
-    input.bind::<UiMove>(1, KeyCode::KeyD);
-
-    input.bind::<UiMove>(0, GamepadButton::DPadLeft);
-    input.bind::<UiMove>(1, GamepadButton::DPadRight);
-
-    input.bind::<UiMove>(0, InputSource::GamepadAxisNegative(GamepadAxis::LeftStickX));
-    input.bind::<UiMove>(1, InputSource::GamepadAxisPositive(GamepadAxis::LeftStickX));
-
-    input.bind::<SoulMove>(0, InputSource::GamepadAxisPositive(GamepadAxis::LeftStickY));
-    input.bind::<SoulMove>(1, InputSource::GamepadAxisNegative(GamepadAxis::LeftStickX));
-    input.bind::<SoulMove>(2, InputSource::GamepadAxisPositive(GamepadAxis::LeftStickX));
-    input.bind::<SoulMove>(3, InputSource::GamepadAxisNegative(GamepadAxis::LeftStickY));
-
-    input.bind::<SoulMove>(Wasd);
-    input.bind::<SoulMove>(DPad);
-
-    input.bind::<Confirm>(KeyCode::Enter);
-}
-
-struct Wasd;
-impl From<Wasd> for [InputSource; 4] {
-    fn from(_: Wasd) -> Self {
+pub struct Wasd;
+impl InputSourceArray<4> for Wasd {
+    fn into(self) -> [InputSource; 4] {
         [
             InputSource::KeyCode(KeyCode::KeyW),
             InputSource::KeyCode(KeyCode::KeyA),
@@ -225,9 +201,9 @@ impl From<Wasd> for [InputSource; 4] {
     }
 }
 
-struct DPad;
-impl From<DPad> for [InputSource; 4] {
-    fn from(_: DPad) -> Self {
+pub struct DPad;
+impl InputSourceArray<4> for DPad {
+    fn into(self) -> [InputSource; 4] {
         [
             InputSource::GamepadButton(GamepadButton::DPadUp),
             InputSource::GamepadButton(GamepadButton::DPadLeft),
@@ -237,9 +213,9 @@ impl From<DPad> for [InputSource; 4] {
     }
 }
 
-impl<T: Into<InputSource>> Binding<bool> for (T,) {
+impl<T: Into<InputSource>> Binding<bool> for T {
     fn bind(self, mut single_bind: impl FnMut(u8, InputSource)) {
-        single_bind(0, self.0.into());
+        single_bind(0, self.into());
     }
 }
 impl Action for bool {
@@ -254,9 +230,9 @@ impl Action for bool {
     }
 }
 
-impl<T: Into<[InputSource; 4]>> Binding<Vec2> for (T,) {
+impl<T: InputSourceArray<4>> Binding<Vec2> for T {
     fn bind(self, mut single_bind: impl FnMut(u8, InputSource)) {
-        for (index, input_source) in self.0.into().into_iter().enumerate() {
+        for (index, input_source) in self.into().into_iter().enumerate() {
             single_bind(index.strict_cast(), input_source);
         }
     }
@@ -286,35 +262,4 @@ impl Action for Vec2 {
 
         output.normalize_or_zero()
     }
-}
-
-#[derive(Debug)]
-pub enum UiMove {
-    Backwards = -1,
-    None = 0,
-    Forwards = 1,
-}
-impl Action for UiMove {
-    type Output = Self;
-
-    fn pressed(mut check: impl FnMut(u8) -> bool) -> bool {
-        check(0) ^ check(1)
-    }
-    fn held(mut check: impl FnMut(u8) -> Option<f32>) -> Self::Output {
-        match (check(0).is_some(), check(1).is_some()) {
-            (true, false) => Self::Backwards,
-            (false, true) => Self::Forwards,
-            _ => Self::None,
-        }
-    }
-}
-
-pub struct SoulMove;
-impl ActionTemplate for SoulMove {
-    type Template = Vec2;
-}
-
-pub struct Confirm;
-impl ActionTemplate for Confirm {
-    type Template = bool;
 }
