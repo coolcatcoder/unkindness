@@ -1,6 +1,6 @@
 use proc_macro::{TokenStream, TokenTree};
 
-use crate::state::{DoubleColon, Parse, Parser, Path, State};
+use crate::state::{Parse, Parser, Path, State};
 
 pub fn scene(input: TokenStream) -> TokenStream {
     let mut state = State::default();

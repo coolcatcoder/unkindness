@@ -1,13 +1,3 @@
-#![feature(custom_inner_attributes)]
-#![feature(proc_macro_hygiene)]
-#![feature(final_associated_functions)]
-
-pub use procedural_macros;
-pub use procedural_macros::prelude;
-
-//#[procedural_macros::plugin]
-mod tester;
-
 #[cfg(test)]
 mod tests;
 
@@ -62,20 +52,4 @@ macro_rules! plugin_modules {
             )*
         }
     };
-}
-
-trait Behaviour {
-    fn once();
-}
-
-#[macro_export]
-macro_rules! prepend_final {
-    ($($any:tt)*) => {
-        final $($any)*
-    };
-}
-
-#[macro_export]
-macro_rules! Behaviour {
-    () => {};
 }

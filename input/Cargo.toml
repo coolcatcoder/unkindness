@@ -1,0 +1,12 @@
+[package]
+name = "input"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { version = "0.19.0", default-features = false, features = [
+    "bevy_scene",
+    "bevy_gilrs",
+    "keyboard",
+] }
+foldhash = "0.2.0"

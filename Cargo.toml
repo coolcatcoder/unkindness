@@ -1,13 +1,13 @@
 [package]
 name = "unkindness"
-version = "0.19.0"
+version = "1.0.0"
 edition = "2024"
 
 [workspace]
-members = ["procedural_macros"]
+members = ["input", "procedural_macros", "scene"]
 
 [dependencies]
-procedural_macros = { path = "procedural_macros" }
+#procedural_macros = { path = "procedural_macros" }
 bevy = { version = "0.19.0", default-features = false, features = [
     "bevy_scene",
 ] }
