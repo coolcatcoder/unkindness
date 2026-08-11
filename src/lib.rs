@@ -1,3 +1,6 @@
+#[cfg(feature = "input")]
+pub use input;
+
 #[cfg(test)]
 mod tests;
 
