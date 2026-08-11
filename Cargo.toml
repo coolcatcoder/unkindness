@@ -12,7 +12,9 @@ bevy = { version = "0.19.0", default-features = false, features = [
     "bevy_scene",
 ] }
 duck_back = { version = "1.4.0", optional = true }
+input = { path = "input", optional = true }
 
 [features]
+input = ["dep:input"]
 error_handling = ["dep:duck_back"]
 default = ["error_handling"]
