@@ -30,10 +30,15 @@ pub mod prelude {
 
     pub use crate::plugin_modules;
 
-    #[allow(non_upper_case_globals)]
-    pub const Vec3: fn(f32, f32, f32) -> Vec3 = Vec3::new;
-    #[allow(non_upper_case_globals)]
-    pub const Vec2: fn(f32, f32) -> Vec2 = Vec2::new;
+    #[expect(non_snake_case)]
+    pub fn Vec3(x: f32, y: f32, z: f32) -> Vec3 {
+        Vec3::new(x, y, z)
+    }
+
+    #[expect(non_snake_case)]
+    pub fn Vec2(x: f32, y: f32) -> Vec2 {
+        Vec2::new(x, y)
+    }
 
     pub trait Behaviour {
         type A;
