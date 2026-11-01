@@ -1,3 +1,5 @@
+pub use bevy::*;
+
 #[cfg(feature = "input")]
 pub use input;
 
