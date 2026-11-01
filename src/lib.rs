@@ -1,7 +1,7 @@
 pub use bevy::*;
 
 #[cfg(feature = "input")]
-pub use input as input_management;
+pub use input_management;
 
 #[cfg(test)]
 mod tests;

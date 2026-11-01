@@ -1683,7 +1683,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "input"
+name = "input_management"
 version = "0.1.0"
 dependencies = [
  "bevy 0.19.0",
@@ -2576,7 +2576,7 @@ version = "1.0.0"
 dependencies = [
  "bevy 0.20.1",
  "duck_back",
- "input",
+ "input_management",
 ]
 
 [[package]]

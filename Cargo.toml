@@ -5,7 +5,7 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 
 [workspace]
-members = ["input", "procedural_macros", "scene"]
+members = ["input_management", "procedural_macros", "scene"]
 
 [dependencies]
 #procedural_macros = { path = "procedural_macros" }
@@ -13,9 +13,9 @@ bevy = { version = "0.20", default-features = false, features = [
     "bevy_scene",
 ] }
 duck_back = { version = "1.4.0", optional = true }
-input = { path = "input", optional = true }
+input_management = { path = "input_management", optional = true }
 
 [features]
-input = ["dep:input"]
+input = ["dep:input_management"]
 error_handling = ["dep:duck_back"]
 default = ["error_handling"]
